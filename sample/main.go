@@ -9,6 +9,7 @@ import (
 func main() {
 	info := buildcard.Snapshot()
 	info.Preview()
+
 	time.Sleep(time.Second * 10)
 
 	info = buildcard.Snapshot()

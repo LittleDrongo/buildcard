@@ -41,32 +41,24 @@ type Info struct {
 // Snapshot collects build metadata and runtime information for the current process.
 func Snapshot() Info {
 	execPath := executablePath()
-	build := Build
+	info := readBuildInfo()
 	args := os.Args
 	if len(args) > 0 {
 		args = args[1:]
 	}
 
-	return Info{
-		Version:        build.Version(),
-		CommitHash:     build.CommitHash(),
-		ShortHash:      build.ShortCommitHash(),
-		CommitDate:     formatTime(build.CommitDate()),
-		Dirty:          build.IsDirty(),
-		BuildTime:      formatTime(build.BuildTime()),
-		Repository:     normalizeText(build.Repository()),
-		Hostname:       normalizeText(hostname()),
-		Username:       normalizeText(username()),
-		ExecutablePath: execPath,
-		ExecutableName: normalizeText(filepath.Base(execPath)),
-		PID:            os.Getpid(),
-		ParentPID:      os.Getppid(),
-		GOOS:           normalizeText(runtime.GOOS),
-		GOARCH:         normalizeText(runtime.GOARCH),
-		StartedAt:      startedAt.Local().Format(time.RFC3339),
-		Uptime:         formatUptime(startedAt),
-		Args:           slices.Clone(args),
-	}
+	info.Hostname = normalizeText(hostname())
+	info.Username = normalizeText(username())
+	info.ExecutablePath = execPath
+	info.ExecutableName = normalizeText(filepath.Base(execPath))
+	info.PID = os.Getpid()
+	info.ParentPID = os.Getppid()
+	info.GOOS = runtime.GOOS
+	info.GOARCH = runtime.GOARCH
+	info.StartedAt = startedAt.Local().Format(time.RFC3339)
+	info.Uptime = formatUptime(startedAt)
+	info.Args = slices.Clone(args)
+	return info
 }
 
 // String returns the snapshot formatted as a table.
