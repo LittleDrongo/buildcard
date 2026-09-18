@@ -24,7 +24,13 @@ var (
 
 func readBuildInfo() Info {
 	info, _ := debug.ReadBuildInfo()
-	return buildInfoFromMetadata(info)
+	b := buildInfoFromMetadata(info)
+	if strings.TrimSpace(buildRepository) == "" && info != nil {
+		if repository := localRepository(info.Main.Path); repository != "" {
+			b.Repository = repository
+		}
+	}
+	return b
 }
 
 func buildInfoFromMetadata(info *debug.BuildInfo) Info {

@@ -27,6 +27,11 @@ type Info struct {
 	Repository     string
 	Hostname       string
 	Username       string
+	InContainer    bool
+	ContainerHost  string // Host of the container engine, supplied by the launcher.
+	ContainerUser  string // User who launched deployment, not the process identity.
+	ContainerName  string
+	ContainerImage string
 	ExecutablePath string
 	ExecutableName string
 	PID            int
@@ -58,6 +63,10 @@ func Snapshot() Info {
 	info.StartedAt = startedAt.Local().Format(time.RFC3339)
 	info.Uptime = formatUptime(startedAt)
 	info.Args = slices.Clone(args)
+	info.setContainerInfo(runtime.GOOS, os.Getenv, func(path string) bool {
+		_, err := os.Stat(path)
+		return err == nil
+	})
 	return info
 }
 
@@ -88,6 +97,11 @@ func (s Info) tableRows() [][2]string {
 		{"Репозиторий", normalizeText(s.Repository)},
 		{"Машина", normalizeText(s.Hostname)},
 		{"Пользователь", normalizeText(s.Username)},
+		{"Приложение в контейнере", strconv.FormatBool(s.InContainer)},
+		{"Хост контейнера", s.ContainerHost},
+		{"Пользователь запуска контейнера", s.ContainerUser},
+		{"Имя контейнера", s.ContainerName},
+		{"Образ контейнера", s.ContainerImage},
 		{"Исполняемый путь", normalizeText(s.ExecutablePath)},
 		{"Исполняемый файл", normalizeText(s.ExecutableName)},
 		{"Процесс PID", strconv.Itoa(s.PID)},
@@ -111,6 +125,10 @@ func hostname() string {
 
 func username() string {
 	u, err := user.Current()
+	return usernameFrom(u, err, os.Getenv, os.Geteuid())
+}
+
+func usernameFrom(u *user.User, err error, getenv func(string) string, uid int) string {
 	if err == nil && u != nil {
 		if strings.TrimSpace(u.Username) != "" {
 			return u.Username
@@ -121,10 +139,15 @@ func username() string {
 		}
 	}
 
-	if name := os.Getenv("USER"); strings.TrimSpace(name) != "" {
-		return name
+	for _, key := range []string{"USER", "LOGNAME", "USERNAME"} {
+		if name := strings.TrimSpace(getenv(key)); name != "" {
+			return name
+		}
 	}
-	return os.Getenv("USERNAME")
+	if uid >= 0 {
+		return "uid=" + strconv.Itoa(uid)
+	}
+	return ""
 }
 
 func executablePath() string {
