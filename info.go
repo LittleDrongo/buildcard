@@ -88,30 +88,39 @@ func (s Info) WriteTable(w io.Writer) error {
 }
 
 func (s Info) tableRows() [][2]string {
-	return [][2]string{
+	rows := [][2]string{
 		{"Версия", normalizeText(s.Version)},
 		{"Коммит", normalizeText(s.ShortHash)},
 		{"Дата коммита", normalizeText(s.CommitDate)},
 		{"Грязный коммит", strconv.FormatBool(s.Dirty)},
 		{"Дата сборки", normalizeText(s.BuildTime)},
 		{"Репозиторий", normalizeText(s.Repository)},
+		{},
+		{"Запуск:", ""},
 		{"Машина", normalizeText(s.Hostname)},
+		{"Операционная система", normalizeText(s.GOOS)},
 		{"Пользователь", normalizeText(s.Username)},
-		{"Приложение в контейнере", strconv.FormatBool(s.InContainer)},
-		{"Хост контейнера", s.ContainerHost},
-		{"Пользователь запуска контейнера", s.ContainerUser},
-		{"Имя контейнера", s.ContainerName},
-		{"Образ контейнера", s.ContainerImage},
 		{"Исполняемый путь", normalizeText(s.ExecutablePath)},
 		{"Исполняемый файл", normalizeText(s.ExecutableName)},
+		{"Архитектура", normalizeText(s.GOARCH)},
+		{"В работе", normalizeText(s.Uptime)},
+		{"Запущено", normalizeText(s.StartedAt)},
 		{"Процесс PID", strconv.Itoa(s.PID)},
 		{"Родитель PID", strconv.Itoa(s.ParentPID)},
-		{"Операционная система", normalizeText(s.GOOS)},
-		{"Архитектура", normalizeText(s.GOARCH)},
-		{"Запущено", normalizeText(s.StartedAt)},
-		{"В работе", normalizeText(s.Uptime)},
 		{"Аргументы запуска", formatArgs(s.Args)},
 	}
+	if s.InContainer {
+		rows = append(rows,
+			[2]string{},
+			[2]string{"Контейнеризация:", ""},
+			[2]string{"Приложение в контейнере", strconv.FormatBool(s.InContainer)},
+			[2]string{"Хост контейнера", s.ContainerHost},
+			[2]string{"Пользователь запуска контейнера", s.ContainerUser},
+			[2]string{"Имя контейнера", s.ContainerName},
+			[2]string{"Образ контейнера", s.ContainerImage},
+		)
+	}
+	return rows
 }
 
 func hostname() string {

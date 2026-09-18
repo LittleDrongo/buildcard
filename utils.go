@@ -53,6 +53,7 @@ func durationString(d time.Duration) string {
 }
 
 // formatTable aligns labels and values in the snapshot table.
+// Empty rows separate sections; labels ending in a colon are section headings.
 func formatTable(rows [][2]string) string {
 	width := 0
 	for _, row := range rows {
@@ -60,6 +61,11 @@ func formatTable(rows [][2]string) string {
 	}
 	var out strings.Builder
 	for _, row := range rows {
+		if row == [2]string{} || strings.HasSuffix(row[0], ":") {
+			out.WriteString(row[0])
+			out.WriteByte('\n')
+			continue
+		}
 		fmt.Fprintf(&out, "%-*s     %s\n", width, row[0], row[1])
 	}
 	return out.String()
